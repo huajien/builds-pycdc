@@ -1,6 +1,6 @@
 name: Compile pycdc for Windows, Linux, and macOS
-on: workflow_dispatch
-
+on:
+  workflow_dispatch:
 jobs:
   build-job:
     runs-on: ubuntu-22.04
