@@ -1,6 +1,6 @@
-name: Compile pycdc for Windows, Linux, and macOS
-on:
-  workflow_dispatch:
+name: Compile pycdc for Windows & Linux
+on: workflow_dispatch
+
 jobs:
   build-job:
     runs-on: ubuntu-22.04
@@ -14,19 +14,19 @@ jobs:
       - name: Clone pycdc
         run: git clone --depth=1 https://github.com/zrax/pycdc
 
-      - name: Compile Windows
+      - name: Compile for Windows
         run: |
           cd pycdc
           echo "RELEASE_COMMIT=$(git log -1 --format=%h)" >> ${GITHUB_ENV}
           cmake -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
-                -DCMAKE_FIND_ROOT_PATH=/usr/i686-w64-mingw32 \
-                -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-                -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
-                -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
-                -DCMAKE_CXX_STANDARD_LIBRARIES="-static-libgcc -static-libstdc++" \
-                .
+          -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc \
+          -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ \
+          -DCMAKE_FIND_ROOT_PATH=/usr/i686-w64-mingw32 \
+          -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+          -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+          -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+          -DCMAKE_CXX_STANDARD_LIBRARIES="-static-libgcc -static-libstdc++" \
+          .
           make
 
       - name: Set release date & time
@@ -37,7 +37,7 @@ jobs:
       - name: Create release Windows
         uses: ncipollo/release-action@v1
         with:
-          name: pycdc ${{ env.RELEASE_DATE }}
+          name: Decompyle++ ${{ env.RELEASE_DATE }}
           tag: build-${{ env.RELEASE_DATE }}-${{ env.RELEASE_COMMIT }}
           body: Compiled on ${{ env.RELEASE_DATE }} at ${{ env.RELEASE_TIME }} GMT, pycdc commit ${{ env.RELEASE_COMMIT }}
           artifacts: "pycdc/pycdc.exe,pycdc/pycdas.exe"
@@ -48,12 +48,12 @@ jobs:
       - name: Setup latest Alpine Linux x86_64
         uses: jirutka/setup-alpine@v1
         with:
-          packages: |
+          packages: >
             alpine-sdk
             cmake
             python3
-        
-      - name: Compile for Linux x86_64
+
+      - name: Compile for Linux x86_64       
         run: |
           cd pycdc
           git clean -d -f -x
@@ -63,11 +63,12 @@ jobs:
           make
           mv pycdc pycdc.x86_64
           mv pycdas pycdas.x86_64
+        shell: alpine.sh {0}
 
       - name: Create release Linux x86_64
         uses: ncipollo/release-action@v1
         with:
-          name: pycdc ${{ env.RELEASE_DATE }}
+          name: Decompyle++ ${{ env.RELEASE_DATE }}
           tag: build-${{ env.RELEASE_DATE }}-${{ env.RELEASE_COMMIT }}
           body: Compiled on ${{ env.RELEASE_DATE }} at ${{ env.RELEASE_TIME }} GMT, pycdc commit ${{ env.RELEASE_COMMIT }}
           artifacts: "pycdc/pycdc.x86_64,pycdc/pycdas.x86_64"
@@ -79,12 +80,12 @@ jobs:
         uses: jirutka/setup-alpine@v1        
         with:
           arch: aarch64
-          packages: |
+          packages: >
             alpine-sdk
             cmake
             python3
 
-      - name: Compile for Linux AArch64
+      - name: Compile for Linux AArch64       
         run: |
           cd pycdc
           git clean -d -f -x
@@ -94,64 +95,15 @@ jobs:
           make
           mv pycdc pycdc.aarch64
           mv pycdas pycdas.aarch64
+        shell: alpine.sh {0}        
 
       - name: Create release Linux aarch64
         uses: ncipollo/release-action@v1
         with:
-          name: pycdc ${{ env.RELEASE_DATE }}
+          name: Decompyle++ ${{ env.RELEASE_DATE }}
           tag: build-${{ env.RELEASE_DATE }}-${{ env.RELEASE_COMMIT }}
           body: Compiled on ${{ env.RELEASE_DATE }} at ${{ env.RELEASE_TIME }} GMT, pycdc commit ${{ env.RELEASE_COMMIT }}
           artifacts: "pycdc/pycdc.aarch64,pycdc/pycdas.aarch64"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
-          draft: true
-
-      - name: Setup macOS x86_64
-        runs-on: macos-latest
-
-      - name: Compile for macOS x86_64
-        run: |
-          cd pycdc
-          git clean -d -f -x
-          sed -i '' '/target_link_libraries(pycdas pycxx)/c target_link_libraries(pycdas pycxx -static)' CMakeLists.txt
-          sed -i '' '/target_link_libraries(pycdc pycxx)/c target_link_libraries(pycdc pycxx -static)' CMakeLists.txt
-          cmake .
-          make
-          mv pycdc pycdc.macosx86_64
-          mv pycdas pycdas.macosx86_64
-
-      - name: Create release macOS x86_64
-        uses: ncipollo/release-action@v1
-        with:
-          name: pycdc ${{ env.RELEASE_DATE }}
-          tag: build-${{ env.RELEASE_DATE }}-${{ env.RELEASE_COMMIT }}
-          body: Compiled on ${{ env.RELEASE_DATE }} at ${{ env.RELEASE_TIME }} GMT, pycdc commit ${{ env.RELEASE_COMMIT }}
-          artifacts: "pycdc/pycdc.macosx86_64,pycdc/pycdas.macosx86_64"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
-          draft: true
-
-      - name: Setup macOS aarch64
-        runs-on: macos-latest
-
-      - name: Compile for macOS aarch64
-        run: |
-          cd pycdc
-          git clean -d -f -x
-          sed -i '' '/target_link_libraries(pycdas pycxx)/c target_link_libraries(pycdas pycxx -static)' CMakeLists.txt
-          sed -i '' '/target_link_libraries(pycdc pycxx)/c target_link_libraries(pycdc pycxx -static)' CMakeLists.txt
-          cmake -DCMAKE_OSX_ARCHITECTURES="arm64" .
-          make
-          mv pycdc pycdc.macosarm64
-          mv pycdas pycdas.macosarm64
-
-      - name: Create release macOS aarch64
-        uses: ncipollo/release-action@v1
-        with:
-          name: pycdc ${{ env.RELEASE_DATE }}
-          tag: build-${{ env.RELEASE_DATE }}-${{ env.RELEASE_COMMIT }}
-          body: Compiled on ${{ env.RELEASE_DATE }} at ${{ env.RELEASE_TIME }} GMT, pycdc commit ${{ env.RELEASE_COMMIT }}
-          artifacts: "pycdc/pycdc.macosarm64,pycdc/pycdas.macosarm64"
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           draft: true
